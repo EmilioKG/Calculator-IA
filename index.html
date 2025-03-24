@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Científica</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #333; /* Fondo gris oscuro */
+            margin: 0;
+        }
+        .calculator {
+            position: relative; /* Necesario para posicionar el LED */
+            background-color: #444; /* Fondo gris más claro para la calculadora */
+            padding: 15px; /* Reducido el padding */
+            border-radius: 8px; /* Borde redondeado ligeramente menor */
+            box-shadow: 0px 0px 8px rgba(255, 255, 255, 0.5); /* Sombra ajustada */
+            width: 300px; /* Ancho reducido */
+            border: 2px solid #fff; /* Borde blanco visible */
+        }
+        .power-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #b30000; /* Rojo oscuro (apagado) */
+            transition: background-color 0.3s;
+        }
+        .power-indicator.on {
+            background-color: #34c759; /* Verde claro (encendido) */
+        }
+        .secondary-display {
+            width: 100%;
+            height: 25px; /* Altura reducida */
+            font-size: 12px; /* Tamaño de fuente reducido */
+            text-align: right;
+            margin-bottom: 5px;
+            padding: 3px; /* Padding reducido */
+            border: 1px solid #ccc;
+            border-radius: 4px; /* Borde redondeado menor */
+            background-color: #f9f9f9;
+            color: #666;
+        }
+        .display {
+            width: 100%;
+            height: 40px; /* Altura reducida */
+            font-size: 20px; /* Tamaño de fuente reducido */
+            text-align: right;
+            margin-bottom: 8px; /* Margen inferior reducido */
+            padding: 3px; /* Padding reducido */
+            border: 1px solid #ccc;
+            border-radius: 4px; /* Borde redondeado menor */
+            background-color: #f9f9f9;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px; /* Espaciado entre botones reducido */
+        }
+        .button {
+            height: 40px; /* Altura de los botones reducida */
+            font-size: 14px; /* Tamaño de fuente reducido */
+            border: none;
+            border-radius: 4px; /* Borde redondeado menor */
+            cursor: pointer;
+            background-color: #e0e0e0;
+            transition: background-color 0.2s;
+        }
+        .button:hover {
+            background-color: #d0d0d0;
+        }
+        .button.operator {
+            background-color: #ff9500;
+            color: white;
+        }
+        .button.operator:hover {
+            background-color: #e68a00;
+        }
+        .button.equal {
+            background-color: #34c759;
+            color: white;
+            grid-column: span 2; /* Ajustado para dar espacio al botón de backspace */
+            height: 50px; /* Altura ligeramente mayor para el botón igual */
+            font-size: 18px; /* Tamaño de fuente ajustado */
+        }
+        .button.equal:hover {
+            background-color: #2da94f;
+        }
+        .button.power {
+            background-color: #1e5631; /* Verde oscuro */
+            color: white;
+            grid-column: span 1;
+        }
+        .button.power:hover {
+            background-color: #184527; /* Verde oscuro más profundo */
+        }
+        .button.clear {
+            background-color: #ff3b30;
+            color: white;
+        }
+        .button.clear:hover {
+            background-color: #e63329;
+        }
+        .button.scientific {
+            background-color: #007aff;
+            color: white;
+        }
+        .button.scientific:hover {
+            background-color: #0069d9;
+        }
+        .button.parentheses {
+            background-color: #ffd600;
+            color: black;
+        }
+        .button.parentheses:hover {
+            background-color: #e6c200;
+        }
+        .button.backspace {
+            background-color: #34c759; /* Verde claro similar al igual */
+            color: white;
+            grid-column: span 1;
+        }
+        .button.backspace:hover {
+            background-color: #2da94f; /* Verde claro más oscuro */
+        }
+        .number-pad {
+            grid-column: span 5;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px; /* Espaciado entre botones reducido */
+        }
+        .number-pad .button {
+            grid-column: auto;
+        }
+        .disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        .footer {
+            text-align: center;
+            font-size: 10px; /* Tamaño de fuente reducido */
+            color: #aaa; /* Color de letra pequeño y discreto */
+            margin-top: 8px; /* Margen superior reducido */
+        }
+    </style>
+</head>
+<body>
+<div class="calculator">
+    <!-- Indicador de encendido/apagado -->
+    <div class="power-indicator" id="powerIndicator"></div>
+    <!-- Pantalla secundaria -->
+    <div class="secondary-display" id="secondaryDisplay"></div>
+    <!-- Pantalla principal -->
+    <input type="text" class="display" id="display" disabled>
+    <div class="buttons">
+        <button class="button clear" onclick="clearDisplay()">C</button>
+        <button class="button parentheses" onclick="appendParenthesis('(')">(</button>
+        <button class="button parentheses" onclick="appendParenthesis(')')">)</button>
+        <button class="button scientific" onclick="applyFunction('pi')">π</button>
+        <button class="button scientific" onclick="applyFunction('sqrt')">√</button>
+        <button class="button scientific" onclick="applyFunction('cbrt')">∛</button>
+        <button class="button scientific" onclick="applyFunction('sin')">sin</button>
+        <button class="button scientific" onclick="applyFunction('cos')">cos</button>
+        <button class="button scientific" onclick="applyFunction('tan')">tan</button>
+        <button class="button scientific" onclick="applyFunction('log')">log</button>
+        <button class="button scientific" onclick="applyFunction('ln')">ln</button>
+        <button class="button scientific" onclick="applyFunction('pow2')">x²</button>
+        <button class="button scientific" onclick="applyFunction('inv')">x⁻¹</button>
+        <button class="button scientific" onclick="applyFunction('sci')">x10^x</button>
+        <button class="button scientific" onclick="applyPercentage()">%</button>
+        <button class="button operator" onclick="appendOperator('^')">^</button>
+        <button class="button operator" onclick="appendOperator('/')">/</button>
+        <button class="button operator" onclick="appendOperator('*')">*</button>
+        <button class="button operator" onclick="appendOperator('-')">-</button>
+        <button class="button operator" onclick="appendOperator('+')">+</button>
+        <div class="number-pad">
+            <button class="button" onclick="appendNumber('7')">7</button>
+            <button class="button" onclick="appendNumber('8')">8</button>
+            <button class="button" onclick="appendNumber('9')">9</button>
+            <button class="button" onclick="appendNumber('4')">4</button>
+            <button class="button" onclick="appendNumber('5')">5</button>
+            <button class="button" onclick="appendNumber('6')">6</button>
+            <button class="button" onclick="appendNumber('1')">1</button>
+            <button class="button" onclick="appendNumber('2')">2</button>
+            <button class="button" onclick="appendNumber('3')">3</button>
+            <button class="button" onclick="appendNumber('0')" style="grid-column: span 2;">0</button>
+            <button class="button" onclick="appendNumber('.')">.</button>
+        </div>
+        <button class="button equal" onclick="calculateResult()">=</button>
+        <button class="button backspace" onclick="backspace()">←</button>
+        <button class="button power" id="powerButton" onclick="togglePower()">ON/OFF</button>
+    </div>
+    <!-- Pie de página con el nombre -->
+    <div class="footer">
+        Emilio Kaphammel González
+    </div>
+</div>
+<script>
+    let display = document.getElementById('display');
+    let secondaryDisplay = document.getElementById('secondaryDisplay');
+    let powerButton = document.getElementById('powerButton');
+    let powerIndicator = document.getElementById('powerIndicator'); // Referencia al indicador LED
+    let isOn = false;
+
+    function togglePower() {
+        const buttons = document.querySelectorAll('.button:not(.power)');
+        if (isOn) {
+            // Apagar la calculadora
+            display.value = "Apagando...";
+            secondaryDisplay.textContent = "";
+            setTimeout(() => {
+                display.value = ""; // Deja el campo vacío al apagar
+                buttons.forEach(button => button.classList.add('disabled'));
+                powerIndicator.classList.remove('on'); // Cambia el LED a rojo oscuro
+            }, 1000);
+        } else {
+            // Encender la calculadora
+            display.value = "Encendiendo...";
+            setTimeout(() => {
+                display.value = ""; // Deja el campo vacío al encender
+                buttons.forEach(button => button.classList.remove('disabled'));
+                powerIndicator.classList.add('on'); // Cambia el LED a verde claro
+            }, 1000);
+        }
+        isOn = !isOn;
+    }
+
+    function appendNumber(number) {
+        if (!isOn) return;
+        if (display.value === "Error") {
+            display.value = "";
+        }
+        display.value += number;
+    }
+
+    function appendOperator(operator) {
+        if (!isOn) return;
+        if (display.value === "" || display.value === "Error") {
+            return;
+        }
+        let lastChar = display.value[display.value.length - 1];
+        if (['+', '-', '*', '/', '^'].includes(lastChar)) {
+            display.value = display.value.slice(0, -1);
+        }
+        display.value += operator;
+    }
+
+    function appendParenthesis(parenthesis) {
+        if (!isOn) return;
+        display.value += parenthesis;
+    }
+
+    function calculateResult() {
+        if (!isOn) return;
+        try {
+            secondaryDisplay.textContent = display.value + " =";
+            display.value = eval(display.value.replace('^', '**'));
+        } catch (error) {
+            display.value = "Error";
+            secondaryDisplay.textContent = ""; // Limpiar si hay un error
+        }
+    }
+
+    function clearDisplay() {
+        if (!isOn) return;
+        display.value = "";
+        secondaryDisplay.textContent = ""; // Limpiar la pantalla secundaria
+    }
+
+    function applyFunction(func) {
+        if (!isOn) return;
+        let value = parseFloat(display.value);
+        if (isNaN(value) && func !== 'pi' && func !== 'sci') {
+            display.value = "Error";
+            return;
+        }
+        switch (func) {
+            case 'pi':
+                display.value = Math.PI.toFixed(6);
+                break;
+            case 'sqrt':
+                display.value = Math.sqrt(value).toFixed(6);
+                break;
+            case 'cbrt':
+                display.value = Math.cbrt(value).toFixed(6);
+                break;
+            case 'sin':
+                display.value = Math.sin(value).toFixed(6);
+                break;
+            case 'cos':
+                display.value = Math.cos(value).toFixed(6);
+                break;
+            case 'tan':
+                display.value = Math.tan(value).toFixed(6);
+                break;
+            case 'log':
+                display.value = Math.log10(value).toFixed(6);
+                break;
+            case 'ln':
+                display.value = Math.log(value).toFixed(6);
+                break;
+            case 'pow2':
+                display.value = Math.pow(value, 2).toFixed(6);
+                break;
+            case 'inv':
+                display.value = (1 / value).toFixed(6);
+                break;
+            case 'sci':
+                display.value += "*10^";
+                break;
+        }
+        secondaryDisplay.textContent = `${func}(${value}) =`;
+    }
+
+    function applyPercentage() {
+        if (!isOn) return;
+        let value = parseFloat(display.value);
+        if (isNaN(value)) {
+            display.value = "Error";
+            return;
+        }
+        display.value = (value / 100).toFixed(6);
+        secondaryDisplay.textContent = `${value}% =`;
+    }
+
+    function backspace() {
+        if (!isOn) return;
+        if (display.value === "Error") {
+            display.value = "";
+        }
+        display.value = display.value.slice(0, -1); // Elimina el último carácter
+    }
+</script>
+</body>
+</html>
